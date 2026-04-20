@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Exam Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --card: #12121a;
+      --card-hover: #1a1a26;
+      --border: #1e1e2e;
+      --text: #e4e4ef;
+      --text-dim: #6b6b82;
+      --accent-blue: #4f8fff;
+      --accent-green: #34d399;
+      --accent-orange: #fb923c;
+      --accent-pink: #f472b6;
+      --accent-purple: #a78bfa;
+      --accent-red: #f87171;
+      --done-bg: #0e0e14;
+      --done-border: #161620;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 30px 18px 80px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+      border-radius: 3px;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #4f8fff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header .sub {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    .live-clock {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent-blue);
+      margin-top: 10px;
+      opacity: 0.7;
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      background: var(--card);
+      padding: 5px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Progress Cards */
+    .progress-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .progress-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .progress-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .progress-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+      transition: width .8s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all .3s ease;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    .filter-btn.active {
+      background: var(--accent-blue);
+      color: #000;
+      border-color: var(--accent-blue);
+    }
+
+    .filter-label {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    /* Evidence Section */
+    .evidence-section {
+      margin-bottom: 32px;
+    }
+
+    .evidence-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Subject Grid */
+    .subjects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .subject-block {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      animation: fadeUp .45s ease both;
+      transition: all .3s ease;
+    }
+
+    .subject-block:hover {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 20px rgba(79, 143, 255, 0.1);
+    }
+
+    .subject-block.done {
+      opacity: 0.6;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .subject-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .subject-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .subject-name {
+      flex: 1;
+    }
+
+    .subject-name .main {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .subject-name .level {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    /* Exam Item */
+    .exam-item {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(79, 143, 255, 0.04);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all .3s ease;
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .exam-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .exam-item:hover {
+      background: rgba(79, 143, 255, 0.08);
+      border-color: var(--border);
+    }
+
+    .exam-item.done {
+      background: rgba(52, 211, 153, 0.05);
+    }
+
+    .exam-item.live {
+      background: rgba(248, 113, 113, 0.1);
+      border-color: var(--accent-red);
+      animation: livePulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .checkbox {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.8rem;
+      transition: all .3s ease;
+    }
+
+    .exam-item.done .checkbox {
+      background: var(--accent-green);
+      border-color: var(--accent-green);
+      color: #000;
+    }
+
+    .exam-item.done .exam-name {
+      opacity: 0.6;
+      text-decoration: line-through;
+    }
+
+    .exam-content {
+      flex: 1;
+    }
+
+    .exam-type {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .exam-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .exam-meta {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .exam-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .exam-marks {
+      font-size: 0.65rem;
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+
+    /* Status Tags */
+    .status {
+      display: inline-block;
+      font-size: 0.55rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status.live {
+      background: rgba(248, 113, 113, 0.2);
+      color: var(--accent-red);
+      animation: livePulse 1.5s ease-in-out infinite;
+    }
+
+    .status.today {
+      background: rgba(79, 143, 255, 0.2);
+      color: var(--accent-blue);
+    }
+
+    .status.upcoming {
+      background: rgba(251, 146, 60, 0.2);
+      color: var(--accent-orange);
+    }
+
+    .status.done {
+      background: rgba(52, 211, 153, 0.2);
+      color: var(--accent-green);
+    }
+
+    /* Mark Button */
+    .mark-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 6px 10px;
+      background: var(--accent-green);
+      border: none;
+      border-radius: 6px;
+      color: #000;
+      font-size: 0.65rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .exam-item.done .mark-btn {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mark-btn:hover {
+      box-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
+      transform: scale(1.05);
+    }
+
+    /* Mark Input Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      max-width: 450px;
+      width: 90%;
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .modal-subtitle {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .password-section {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .password-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+
+    .password-input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      background: var(--card-hover);
+    }
+
+    .password-error {
+      color: var(--accent-red);
+      font-size: 0.7rem;
+      display: none;
+    }
+
+    .password-error.show {
+      display: block;
+    }
+
+    .marks-input-group {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      margin-bottom: 16px;
+    }
+
+    .marks-input-group label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .marks-input-group input {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    .marks-input-group input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      background: var(--card-hover);
+    }
+
+    .marks-input-total {
+      width: 70px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .3s ease;
+    }
+
+    .modal-btn.save {
+      background: var(--accent-green);
+      color: #000;
+    }
+
+    .modal-btn.save:hover {
+      box-shadow: 0 0 15px rgba(52, 211, 153, 0.3);
+    }
+
+    .modal-btn.cancel {
+      background: var(--border);
+      color: var(--text-dim);
+    }
+
+    .modal-btn.cancel:hover {
+      background: var(--card-hover);
+      color: var(--text);
+    }
+
+    /* Control Bar */
+    .control-bar {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .control-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--accent-red);
+      border: none;
+      color: #000;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .control-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(248, 113, 113, 0.3);
+    }
+
+    /* Performance Report */
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .report-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      transition: all .3s ease;
+    }
+
+    .report-card:hover {
+      border-color: var(--accent-purple);
+    }
+
+    .report-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .report-subject-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .report-level {
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    .report-evidences {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .report-ev {
+      background: rgba(79, 143, 255, 0.05);
+      border-radius: 8px;
+      padding: 8px 6px;
+      text-align: center;
+    }
+
+    .report-ev-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.58rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .report-ev-value {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .report-ev-count {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.55rem;
+      color: var(--text-dim);
+    }
+
+    .report-combined {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(167, 139, 250, 0.08);
+      border-radius: 8px;
+      border: 1px solid rgba(167, 139, 250, 0.2);
+    }
+
+    .report-combined-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .report-combined-value {
+      font-size: 1.3rem;
+      font-weight: 800;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .overall-report-card {
+      background: linear-gradient(135deg, rgba(79, 143, 255, 0.1), rgba(167, 139, 250, 0.1));
+      border: 1px solid var(--accent-purple);
+      border-radius: 14px;
+      padding: 22px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .overall-report-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(167, 139, 250, 0.15) 0%, transparent 50%);
+      animation: pulse 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    .overall-report-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      position: relative;
+    }
+
+    .overall-report-value {
+      font-size: 3rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      position: relative;
+      letter-spacing: -2px;
+    }
+
+    .overall-report-sub {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      position: relative;
+    }
+
+    .overall-report-live {
+      display: inline-block;
+      margin-left: 8px;
+      width: 8px;
+      height: 8px;
+      background: var(--accent-red);
+      border-radius: 50%;
+      animation: livePulse 1.5s ease-in-out infinite;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.5rem;
+      }
+
+      .subjects-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mark-btn {
+        font-size: 0.55rem;
+        padding: 4px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Exam Tracker</h1>
+    <div class="sub">Cambridge Assessment Schedule</div>
+    <div class="live-clock" id="liveClock"></div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #4f8fff;"></div>
+      <span>Math IGCSE</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #34d399;"></div>
+      <span>Chemistry IGCSE</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #f472b6;"></div>
+      <span>English AS</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #a78bfa;"></div>
+      <span>Business AS</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #fb923c;"></div>
+      <span>Economics AS</span>
+    </div>
+  </div>
+
+  <!-- Progress Overview -->
+  <div class="progress-section">
+    <div class="progress-card">
+      <div class="progress-title">Overall Progress</div>
+      <div class="progress-value" id="overallPct">0%</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="overallFill" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="progress-card">
+      <div class="progress-title">Evidence 1 (Mocks)</div>
+      <div class="progress-value" id="ev1Pct">0%</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="ev1Fill" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="progress-card">
+      <div class="progress-title">Evidence 2 (Tests)</div>
+      <div class="progress-value" id="ev2Pct">0%</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="ev2Fill" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="progress-card">
+      <div class="progress-title">Evidence 3 (Tasks)</div>
+      <div class="progress-value" id="ev3Pct">0%</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="ev3Fill" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar">
+    <span class="filter-label">Filter:</span>
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="today">Today</button>
+    <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+    <button class="filter-btn" data-filter="done">Done</button>
+  </div>
+
+  <!-- Subjects Grid -->
+  <div id="content"></div>
+</div>
+
+<!-- Mark Input Modal -->
+<div id="markModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-title" id="modalExamName">Add Marks</div>
+    <div class="modal-subtitle" id="modalExamPaper">Paper / Task</div>
+
+    <div class="password-section">
+      <label class="password-label">Password</label>
+      <input type="password" id="passwordInput" class="password-input" placeholder="Enter password">
+      <div class="password-error" id="passwordError">Incorrect password</div>
+    </div>
+
+    <div class="marks-input-group">
+      <label>Your Mark</label>
+      <input type="number" id="markInput" placeholder="0" min="0">
+      <span style="color: var(--text-dim); font-weight: 600;">/</span>
+      <input type="number" id="totalInput" class="marks-input-total" placeholder="Total" min="1">
+    </div>
+
+    <div class="modal-buttons">
+      <button class="modal-btn save" id="saveMarkBtn">Save Mark</button>
+      <button class="modal-btn cancel" id="closeMarkModalBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Control Buttons -->
+<div class="control-bar">
+  <button class="control-btn" id="resetBtn" title="Reset all progress">⟲</button>
+</div>
+
+<script>
+const STORAGE_KEY = 'examTrackerComplete_v2';
+const PASSWORD = '677';
+
+// Evidence 1: Mock Exams
+const mockExams = [
+  { date: '2026-04-15', subject: 'Chemistry', id: 'chem-p6', paper: 'P6 — Practical', time: '12:00 PM', end: '12:45 PM', endH: 12, endM: 0, endH2: 12, endM2: 45, dur: '45m', color: '#34d399', level: 'IGCSE', type: 'MOCK', maxMarks: 40, evidence: 1 },
+  { date: '2026-04-01', subject: 'Mathematics', id: 'math-p2', paper: 'P2 — Extended', time: '8:00 AM', end: '10:00 AM', endH: 8, endM: 0, endH2: 10, endM2: 0, dur: '2h', color: '#4f8fff', level: 'IGCSE', type: 'MOCK', maxMarks: 130, evidence: 1 },
+  { date: '2026-04-01', subject: 'Mathematics', id: 'math-p4', paper: 'P4 — Extended', time: '12:00 PM', end: '2:00 PM', endH: 12, endM: 0, endH2: 14, endM2: 0, dur: '2h', color: '#4f8fff', level: 'IGCSE', type: 'MOCK', maxMarks: 130, evidence: 1 },
+  { date: '2026-04-02', subject: 'English', id: 'eng-p1', paper: 'P1 — Writing', time: '8:00 AM', end: '9:15 AM', endH: 8, endM: 0, endH2: 9, endM2: 15, dur: '1h 15m', color: '#f472b6', level: 'AS', type: 'MOCK', maxMarks: 60, evidence: 1 },
+  { date: '2026-04-02', subject: 'English', id: 'eng-p2', paper: 'P2 — Reading', time: '11:15 AM', end: '1:00 PM', endH: 11, endM: 15, endH2: 13, endM2: 0, dur: '1h 45m', color: '#f472b6', level: 'AS', type: 'MOCK', maxMarks: 80, evidence: 1 },
+  { date: '2026-04-05', subject: 'Business', id: 'bus-u1', paper: 'Unit 1', time: '8:00 AM', end: '10:00 AM', endH: 8, endM: 0, endH2: 10, endM2: 0, dur: '2h', color: '#a78bfa', level: 'AS', type: 'MOCK', maxMarks: 90, evidence: 1 },
+  { date: '2026-04-06', subject: 'Economics', id: 'econ-u2', paper: 'Unit 2', time: '8:00 AM', end: '9:45 AM', endH: 8, endM: 0, endH2: 9, endM2: 45, dur: '1h 45m', color: '#fb923c', level: 'AS', type: 'MOCK', maxMarks: 90, evidence: 1 },
+  { date: '2026-04-07', subject: 'Chemistry', id: 'chem-p4', paper: 'P4 — Extended', time: '8:00 AM', end: '9:15 AM', endH: 8, endM: 0, endH2: 9, endM2: 15, dur: '1h 15m', color: '#34d399', level: 'IGCSE', type: 'MOCK', maxMarks: 80, evidence: 1 },
+  { date: '2026-04-07', subject: 'Business', id: 'bus-u2', paper: 'Unit 2', time: '11:00 AM', end: '1:00 PM', endH: 11, endM: 0, endH2: 13, endM2: 0, dur: '2h', color: '#a78bfa', level: 'AS', type: 'MOCK', maxMarks: 90, evidence: 1 },
+  { date: '2026-04-14', subject: 'Economics', id: 'econ-u1', paper: 'Unit 1', time: '8:00 AM', end: '9:45 AM', endH: 8, endM: 0, endH2: 9, endM2: 45, dur: '1h 45m', color: '#fb923c', level: 'AS', type: 'MOCK', maxMarks: 90, evidence: 1 },
+];
+
+// Evidence 2: Tests
+const tests = [
+  { date: '2026-04-16', subject: 'English', id: 'eng-test', paper: 'Paper 1 Writing', time: '7:30 AM - 8:30 AM', endH: 7, endM: 30, endH2: 8, endM2: 30, dur: '1h', color: '#f472b6', level: 'AS', type: 'TEST', maxMarks: 60, evidence: 2 },
+  { date: '2026-04-19', subject: 'Mathematics', id: 'math-test', paper: 'Paper 4', time: '7:30 AM - 8:30 AM', endH: 7, endM: 30, endH2: 8, endM2: 30, dur: '1h', color: '#4f8fff', level: 'IGCSE', type: 'TEST', maxMarks: 100, evidence: 2 },
+  { date: '2026-04-20', subject: 'Business', id: 'bus-test', paper: 'Unit 2', time: '7:30 AM - 8:30 AM', endH: 7, endM: 30, endH2: 8, endM2: 30, dur: '1h', color: '#a78bfa', level: 'AS', type: 'TEST', maxMarks: 90, evidence: 2 },
+  { date: '2026-04-21', subject: 'Chemistry', id: 'chem-test', paper: 'Paper 4', time: '7:30 AM - 8:30 AM', endH: 7, endM: 30, endH2: 8, endM2: 30, dur: '1h', color: '#34d399', level: 'IGCSE', type: 'TEST', maxMarks: 100, evidence: 2 },
+  { date: '2026-04-22', subject: 'Economics', id: 'econ-test', paper: 'Unit 2', time: '7:30 AM - 8:30 AM', endH: 7, endM: 30, endH2: 8, endM2: 30, dur: '1h', color: '#fb923c', level: 'AS', type: 'TEST', maxMarks: 90, evidence: 2 },
+];
+
+// Evidence 3: Tasks
+const tasks = [
+  { date: '2026-04-16', subject: 'English', id: 'eng-task', paper: 'Paper 2 Reading', time: '10:30 AM - 12:00 PM', endH: 10, endM: 30, endH2: 12, endM2: 0, dur: '1h 30m', color: '#f472b6', level: 'AS', type: 'TASK', maxMarks: 80, evidence: 3 },
+  { date: '2026-04-19', subject: 'Mathematics', id: 'math-task', paper: 'Textbook Questions', time: '10:30 AM - 12:00 PM', endH: 10, endM: 30, endH2: 12, endM2: 0, dur: '1h 30m', color: '#4f8fff', level: 'IGCSE', type: 'TASK', maxMarks: 100, evidence: 3 },
+  { date: '2026-04-20', subject: 'Business', id: 'bus-task', paper: 'Coursebook Questions', time: '10:30 AM - 12:00 PM', endH: 10, endM: 30, endH2: 12, endM2: 0, dur: '1h 30m', color: '#a78bfa', level: 'AS', type: 'TASK', maxMarks: 90, evidence: 3 },
+  { date: '2026-04-21', subject: 'Chemistry', id: 'chem-task', paper: 'Textbook Questions', time: '10:30 AM - 12:00 PM', endH: 10, endM: 30, endH2: 12, endM2: 0, dur: '1h 30m', color: '#34d399', level: 'IGCSE', type: 'TASK', maxMarks: 100, evidence: 3 },
+  { date: '2026-04-22', subject: 'Economics', id: 'econ-task', paper: 'Coursebook Questions', time: '10:30 AM - 12:00 PM', endH: 10, endM: 30, endH2: 12, endM2: 0, dur: '1h 30m', color: '#fb923c', level: 'AS', type: 'TASK', maxMarks: 90, evidence: 3 },
+];
+
+const allExams = [...mockExams, ...tests, ...tasks];
+
+let data = loadData();
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { marks: {} };
+  } catch { return { marks: {} }; }
+}
+
+function saveData() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+}
+
+function isExamLive(dateStr, endH, endM, endH2, endM2) {
+  const now = new Date();
+  const examDate = new Date(dateStr);
+  if (now.getFullYear() !== examDate.getFullYear() ||
+      now.getMonth() !== examDate.getMonth() ||
+      now.getDate() !== examDate.getDate()) {
+    return false;
+  }
+  const start = new Date(dateStr);
+  start.setHours(endH, endM, 0, 0);
+  const end = new Date(dateStr);
+  end.setHours(endH2, endM2, 0, 0);
+  return now >= start && now <= end;
+}
+
+function isExamDone(dateStr, endH2, endM2) {
+  const now = new Date();
+  const end = new Date(dateStr);
+  end.setHours(endH2, endM2, 0, 0);
+  return now > end;
+}
+
+function getStatus(dateStr, endH2, endM2) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const examDate = new Date(dateStr);
+  const examDay = new Date(examDate.getFullYear(), examDate.getMonth(), examDate.getDate());
+  const diff = Math.floor((examDay - today) / (1000 * 60 * 60 * 24));
+
+  if (isExamDone(dateStr, endH2, endM2)) return 'done';
+  if (diff === 0) return 'today';
+  if (diff > 0) return 'upcoming';
+  return 'past';
+}
+
+function openMarkModal(id, subject, paper, maxMarks) {
+  const exam = data.marks[id] || { mark: '', total: maxMarks };
+  document.getElementById('modalExamName').textContent = subject;
+  document.getElementById('modalExamPaper').textContent = paper;
+  document.getElementById('markInput').value = exam.mark || '';
+  document.getElementById('totalInput').value = exam.total || maxMarks;
+  document.getElementById('passwordInput').value = '';
+  document.getElementById('passwordError').classList.remove('show');
+  
+  document.getElementById('saveMarkBtn').onclick = () => saveMarks(id, maxMarks);
+  document.getElementById('markModal').classList.add('active');
+  setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+}
+
+function saveMarks(id, maxMarks) {
+  const pwd = document.getElementById('passwordInput').value;
+  if (pwd !== PASSWORD) {
+    document.getElementById('passwordError').classList.add('show');
+    return;
+  }
+
+  const mark = parseInt(document.getElementById('markInput').value);
+  const total = parseInt(document.getElementById('totalInput').value) || maxMarks;
+  
+  if (!isNaN(mark) && mark >= 0) {
+    data.marks[id] = { mark, total };
+    saveData();
+    document.getElementById('markModal').classList.remove('active');
+    render();
+  }
+}
+
+function renderExam(exam) {
+  const mark = data.marks[exam.id];
+  const live = isExamLive(exam.date, exam.endH, exam.endM, exam.endH2, exam.endM2);
+  const done = isExamDone(exam.date, exam.endH2, exam.endM2);
+  const status = getStatus(exam.date, exam.endH2, exam.endM2);
+  
+  let markDisplay = '';
+  if (mark) {
+    const pct = Math.round((mark.mark / mark.total) * 100);
+    markDisplay = `<span class="exam-marks">${mark.mark}/${mark.total} (${pct}%)</span>`;
+  }
+
+  let statusTag = '';
+  if (status === 'done') statusTag = '<span class="status done">Done</span>';
+  else if (live) statusTag = '<span class="status live">🔴 LIVE</span>';
+  else if (status === 'today') statusTag = '<span class="status today">Today</span>';
+  else if (status === 'upcoming') statusTag = '<span class="status upcoming">Upcoming</span>';
+
+  return `
+    <div class="exam-item${done ? ' done' : ''}${live ? ' live' : ''}">
+      <div class="checkbox">${done ? '✓' : ''}</div>
+      <div class="exam-content">
+        <div class="exam-type">${exam.type}</div>
+        <div class="exam-name">${exam.paper}</div>
+        <div class="exam-meta">
+          <span>📅 ${new Date(exam.date).toLocaleDateString('en-GB', {weekday:'short',day:'2-digit',month:'short'})}</span>
+          <span>🕐 ${exam.time}</span>
+          ${statusTag}
+          ${markDisplay}
+        </div>
+      </div>
+      ${done ? `<button class="mark-btn" onclick="event.stopPropagation(); openMarkModal('${exam.id}', '${exam.subject}', '${exam.paper}', ${exam.maxMarks})">📝</button>` : ''}
+    </div>
+  `;
+}
+
+function render() {
+  const now = new Date();
+  const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+
+  let html = '';
+  let allStats = { total: 0, done: 0 };
+  let ev1Stats = { total: 0, done: 0 };
+  let ev2Stats = { total: 0, done: 0 };
+  let ev3Stats = { total: 0, done: 0 };
+
+  // Group by subject
+  const bySubject = {};
+  allExams.forEach(exam => {
+    if (!bySubject[exam.subject]) {
+      bySubject[exam.subject] = { color: exam.color, level: exam.level, icon: getIcon(exam.subject), exams: [] };
+    }
+    bySubject[exam.subject].exams.push(exam);
+  });
+
+  // Evidence 1: Mock Exams
+  html += `<div class="evidence-section"><div class="evidence-title">📋 Evidence 1: Mock Exams</div><div class="subjects-grid">`;
+
+  Object.entries(bySubject).forEach(([subject, data]) => {
+    const exams = data.exams.filter(e => e.evidence === 1);
+    if (exams.length === 0) return;
+
+    let subjectDone = 0, subjectTotal = 0;
+    let subjectHtml = '';
+
+    exams.forEach(exam => {
+      const isDone = isExamDone(exam.date, exam.endH2, exam.endM2);
+      const status = getStatus(exam.date, exam.endH2, exam.endM2);
+      
+      let show = activeFilter === 'all';
+      if (activeFilter === 'today' && status === 'today') show = true;
+      if (activeFilter === 'upcoming' && status === 'upcoming') show = true;
+      if (activeFilter === 'done' && isDone) show = true;
+
+      if (!show) return;
+
+      subjectHtml += renderExam(exam);
+      subjectTotal++;
+      if (isDone) subjectDone++;
+      
+      ev1Stats.total++;
+      if (isDone) ev1Stats.done++;
+      
+      allStats.total++;
+      if (isDone) allStats.done++;
+    });
+
+    if (subjectHtml) {
+      html += `
+        <div class="subject-block${subjectDone === subjectTotal ? ' done' : ''}">
+          <div class="subject-header">
+            <div class="subject-icon" style="background: ${data.color}20; color: ${data.color};">${data.icon}</div>
+            <div class="subject-name">
+              <div class="main">${subject}</div>
+              <div class="level">${data.level}</div>
+            </div>
+          </div>
+          ${subjectHtml}
+        </div>
+      `;
+    }
+  });
+
+  html += '</div></div>';
+
+  // Evidence 2 & 3: Combined Tests & Tasks
+  html += `<div class="evidence-section"><div class="evidence-title">📝 Evidence 2 & 3: Tests & Tasks (1-Hour Each)</div><div class="subjects-grid">`;
+
+  Object.entries(bySubject).forEach(([subject, data]) => {
+    const exams = data.exams.filter(e => e.evidence === 2 || e.evidence === 3);
+    if (exams.length === 0) return;
+
+    let subjectDone = 0, subjectTotal = 0;
+    let subjectHtml = '';
+
+    exams.forEach(exam => {
+      const isDone = isExamDone(exam.date, exam.endH2, exam.endM2);
+      const status = getStatus(exam.date, exam.endH2, exam.endM2);
+      
+      let show = activeFilter === 'all';
+      if (activeFilter === 'today' && status === 'today') show = true;
+      if (activeFilter === 'upcoming' && status === 'upcoming') show = true;
+      if (activeFilter === 'done' && isDone) show = true;
+
+      if (!show) return;
+
+      subjectHtml += renderExam(exam);
+      subjectTotal++;
+      if (isDone) subjectDone++;
+      
+      if (exam.evidence === 2) {
+        ev2Stats.total++;
+        if (isDone) ev2Stats.done++;
+      } else {
+        ev3Stats.total++;
+        if (isDone) ev3Stats.done++;
+      }
+      
+      allStats.total++;
+      if (isDone) allStats.done++;
+    });
+
+    if (subjectHtml) {
+      html += `
+        <div class="subject-block${subjectDone === subjectTotal ? ' done' : ''}">
+          <div class="subject-header">
+            <div class="subject-icon" style="background: ${data.color}20; color: ${data.color};">${data.icon}</div>
+            <div class="subject-name">
+              <div class="main">${subject}</div>
+              <div class="level">${data.level}</div>
+            </div>
+          </div>
+          ${subjectHtml}
+        </div>
+      `;
+    }
+  });
+
+  html += '</div></div>';
+
+  // Performance Report — per-subject combined averages + overall live average
+  html += renderPerformanceReport();
+
+  // Update progress
+  const allPct = Math.round((allStats.done / allStats.total) * 100);
+  const ev1Pct = Math.round((ev1Stats.done / ev1Stats.total) * 100);
+  const ev2Pct = Math.round((ev2Stats.done / ev2Stats.total) * 100);
+  const ev3Pct = Math.round((ev3Stats.done / ev3Stats.total) * 100);
+
+  document.getElementById('overallPct').textContent = `${allPct}%`;
+  document.getElementById('overallFill').style.width = allPct + '%';
+  document.getElementById('ev1Pct').textContent = `${ev1Stats.done}/${ev1Stats.total}`;
+  document.getElementById('ev1Fill').style.width = ev1Pct + '%';
+  document.getElementById('ev2Pct').textContent = `${ev2Stats.done}/${ev2Stats.total}`;
+  document.getElementById('ev2Fill').style.width = ev2Pct + '%';
+  document.getElementById('ev3Pct').textContent = `${ev3Stats.done}/${ev3Stats.total}`;
+  document.getElementById('ev3Fill').style.width = ev3Pct + '%';
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function renderPerformanceReport() {
+  const subjects = {};
+  allExams.forEach(exam => {
+    if (!subjects[exam.subject]) {
+      subjects[exam.subject] = {
+        color: exam.color,
+        level: exam.level,
+        icon: getIcon(exam.subject),
+        ev: {
+          1: { sumMark: 0, sumTotal: 0, entered: 0, total: 0 },
+          2: { sumMark: 0, sumTotal: 0, entered: 0, total: 0 },
+          3: { sumMark: 0, sumTotal: 0, entered: 0, total: 0 },
+        },
+        all: { sumMark: 0, sumTotal: 0, entered: 0, total: 0 },
+      };
+    }
+    const s = subjects[exam.subject];
+    s.ev[exam.evidence].total++;
+    s.all.total++;
+    const m = data.marks[exam.id];
+    if (m && typeof m.mark === 'number' && m.total > 0) {
+      s.ev[exam.evidence].sumMark += m.mark;
+      s.ev[exam.evidence].sumTotal += m.total;
+      s.ev[exam.evidence].entered++;
+      s.all.sumMark += m.mark;
+      s.all.sumTotal += m.total;
+      s.all.entered++;
+    }
+  });
+
+  let cards = '';
+  let totalMark = 0, totalTotal = 0, totalEntered = 0, totalAssessments = 0;
+
+  Object.entries(subjects).forEach(([name, s]) => {
+    const combined = s.all.sumTotal > 0 ? Math.round((s.all.sumMark / s.all.sumTotal) * 100) : null;
+    const evCell = (evNum) => {
+      const ev = s.ev[evNum];
+      const pct = ev.sumTotal > 0 ? Math.round((ev.sumMark / ev.sumTotal) * 100) : null;
+      return `
+        <div class="report-ev">
+          <div class="report-ev-label">Ev ${evNum}</div>
+          <div class="report-ev-value">${pct !== null ? pct + '%' : '—'}</div>
+          <div class="report-ev-count">${ev.entered}/${ev.total}</div>
+        </div>
+      `;
+    };
+
+    totalMark += s.all.sumMark;
+    totalTotal += s.all.sumTotal;
+    totalEntered += s.all.entered;
+    totalAssessments += s.all.total;
+
+    cards += `
+      <div class="report-card">
+        <div class="report-header">
+          <div class="subject-icon" style="background: ${s.color}20; color: ${s.color};">${s.icon}</div>
+          <div>
+            <div class="report-subject-name">${name}</div>
+            <div class="report-level">${s.level}</div>
+          </div>
+        </div>
+        <div class="report-evidences">
+          ${evCell(1)}${evCell(2)}${evCell(3)}
+        </div>
+        <div class="report-combined">
+          <div class="report-combined-label">Combined</div>
+          <div class="report-combined-value" style="color: ${s.color};">${combined !== null ? combined + '%' : '—'}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  const overallPct = totalTotal > 0 ? Math.round((totalMark / totalTotal) * 100) : null;
+
+  return `
+    <div class="evidence-section">
+      <div class="evidence-title">📊 Performance Report</div>
+      <div class="report-grid">${cards}</div>
+      <div class="overall-report-card">
+        <div class="overall-report-title">Overall Live Average <span class="overall-report-live"></span></div>
+        <div class="overall-report-value">${overallPct !== null ? overallPct + '%' : '—'}</div>
+        <div class="overall-report-sub">${totalEntered} of ${totalAssessments} assessments scored</div>
+      </div>
+    </div>
+  `;
+}
+
+function getIcon(subject) {
+  const icons = {
+    'Chemistry': '🧪',
+    'Mathematics': '📐',
+    'English': '📚',
+    'Business': '💼',
+    'Economics': '📈',
+  };
+  return icons[subject] || '📌';
+}
+
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    render();
+  });
+});
+
+// Modal
+document.getElementById('closeMarkModalBtn').addEventListener('click', () => {
+  document.getElementById('markModal').classList.remove('active');
+});
+
+// Reset
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (confirm('Reset all marks? This will clear all entered marks.')) {
+    data = { marks: {} };
+    saveData();
+    render();
+  }
+});
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  const opts = { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+  document.getElementById('liveClock').textContent = now.toLocaleString('en-GB', opts);
+}
+
+function autoComplete() {
+  const now = new Date();
+  let changed = false;
+  
+  allExams.forEach(exam => {
+    if (isExamDone(exam.date, exam.endH2, exam.endM2)) {
+      // Exam is done but not marked yet - it will show as done in UI automatically
+      // This just ensures render picks it up
+    }
+  });
+  
+  if (changed) saveData();
+}
+
+autoComplete();
+render();
+updateClock();
+setInterval(updateClock, 1000);
+setInterval(() => { render(); }, 30000);
+</script>
+
+</body>
+</html>
